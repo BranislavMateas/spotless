@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:spotless/pages/home_page.dart';
+import 'package:spotless/pages/login_page.dart';
 
 class SpotlessApp extends StatelessWidget {
   const SpotlessApp({super.key});
@@ -7,12 +8,16 @@ class SpotlessApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      routes: {
+        LoginPage.pageRoute: (context) => LoginPage(),
+        HomePage.pageRoute: (context) => HomePage(),
+      },
+      debugShowCheckedModeBanner: false,
+      initialRoute: LoginPage.pageRoute,
       title: 'Spotless',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const HomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
