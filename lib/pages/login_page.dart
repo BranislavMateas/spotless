@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:spotify_sdk/spotify_sdk.dart';
 import 'package:spotless/pages/home_page.dart';
 import 'dart:math' as math;
 
@@ -52,6 +53,26 @@ class _LoginPageState extends State<LoginPage> {
           TextField(controller: passwordController),
           ElevatedButton(
             onPressed: () async {
+              String accessToken = await SpotifySdk.getAccessToken(
+                clientId: dotenv.env['CLIENT_ID']!,
+                redirectUrl: dotenv.env['REDIRECT_URI']!,
+                scope: "playlist-read-private",
+              );
+              await SpotifySdk.connectToSpotifyRemote(
+                clientId: dotenv.env['CLIENT_ID']!,
+                redirectUrl: dotenv.env['REDIRECT_URI']!,
+                accessToken: accessToken,
+                scope: "playlist-read-private",
+              );
+
+              var response = await http.get(
+                  Uri.parse(
+                      "https://api.spotify.com/v1/playlists/34I7rGMy6g2wH1p3Lu0zHW/tracks"),
+                  headers: {"Authorization": "Bearer $accessToken"});
+              print(response.body);
+
+              /*
+              // Request User Authorization
               String verifier = generateRandomString(128);
               String challenge = generateCodeChallenge(verifier);
 
@@ -83,6 +104,9 @@ class _LoginPageState extends State<LoginPage> {
                   mode: LaunchMode.externalApplication,
                 );
               }
+              */
+
+              // Request an access token
 
               // Navigator.pushReplacementNamed(context, HomePage.pageRoute);
             },
