@@ -3,26 +3,28 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spotify_sdk/spotify_sdk.dart';
 import 'package:spotless/pages/home_page.dart';
+import 'package:spotless/pages/track_list_page.dart';
+import 'package:spotless/providers/fetched_tracks_provider.dart';
 import 'dart:math' as math;
 
 import 'package:url_launcher/url_launcher.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   static String pageRoute = "/login";
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
-  final TextEditingController usernameController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+class _LoginPageState extends ConsumerState<LoginPage> {
+  final TextEditingController playlistUrlController = TextEditingController();
 
   String generateRandomString(length) {
     String text = '';
@@ -46,11 +48,11 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Login")),
+      appBar: AppBar(),
       body: Column(
         children: [
-          TextField(controller: usernameController),
-          TextField(controller: passwordController),
+          Text("Enter the Url of your playlist"),
+          TextField(controller: playlistUrlController),
           ElevatedButton(
             onPressed: () async {
               String accessToken = await SpotifySdk.getAccessToken(
@@ -65,11 +67,17 @@ class _LoginPageState extends State<LoginPage> {
                 scope: "playlist-read-private",
               );
 
-              var response = await http.get(
-                  Uri.parse(
-                      "https://api.spotify.com/v1/playlists/34I7rGMy6g2wH1p3Lu0zHW/tracks"),
-                  headers: {"Authorization": "Bearer $accessToken"});
-              print(response.body);
+              await ref
+                  .read(fetchedTracksProvider.notifier)
+                  .fetchFromUrl(
+                      Uri.parse(
+                          "https://api.spotify.com/v1/playlists/34I7rGMy6g2wH1p3Lu0zHW/tracks"),
+                      accessToken)
+                  .then((_) {
+                return ref
+                    .read(fetchedTracksProvider.notifier)
+                    .getFetchedTracks();
+              });
 
               /*
               // Request User Authorization
@@ -108,7 +116,9 @@ class _LoginPageState extends State<LoginPage> {
 
               // Request an access token
 
-              // Navigator.pushReplacementNamed(context, HomePage.pageRoute);
+              if (mounted)
+                Navigator.pushReplacementNamed(
+                    context, TrackListPage.pageRoute);
             },
             child: const Text("Submit"),
           )
