@@ -5,7 +5,7 @@ import 'package:spotify_sdk/spotify_sdk.dart';
 import 'package:spotless/pages/track_list_page.dart';
 import 'package:spotless/providers/access_token_provider.dart';
 import 'package:spotless/providers/fetched_tracks_provider.dart';
-import 'package:spotless/providers/playlist_url_provider.dart';
+import 'package:spotless/providers/playlist_id_provider.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -34,21 +34,28 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 redirectUrl: dotenv.env['REDIRECT_URI']!,
                 scope: "playlist-read-private",
               );
+              /*
               await SpotifySdk.connectToSpotifyRemote(
                 clientId: dotenv.env['CLIENT_ID']!,
                 redirectUrl: dotenv.env['REDIRECT_URI']!,
                 accessToken: accessToken,
                 scope: "playlist-read-private",
               );
+               */
+
+              // TODO check for input text
+              var playlistId =
+                  Uri.parse(playlistUrlController.value.text).pathSegments.last;
 
               ref.read(accessTokenProvider.notifier).state = accessToken;
-              ref.read(playlistUrlProvider.notifier).state = Uri.parse(
-                  "https://api.spotify.com/v1/playlists/34I7rGMy6g2wH1p3Lu0zHW/tracks");
+              ref.read(playlistIdProvider.notifier).state = playlistId;
 
-              await ref.read(fetchedTracksProvider.notifier).fetchFromUrl(
-                  Uri.parse(
-                      "https://api.spotify.com/v1/playlists/34I7rGMy6g2wH1p3Lu0zHW/tracks"),
-                  accessToken);
+              await ref
+                  .read(fetchedTracksProvider.notifier)
+                  .fetchFromPlaylistId(
+                    playlistId,
+                    accessToken,
+                  );
 
               if (mounted) {
                 Navigator.pushNamed(context, TrackListPage.pageRoute);

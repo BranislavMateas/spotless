@@ -7,7 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:spotless/models/track_model.dart';
 import 'package:spotless/providers/access_token_provider.dart';
 import 'package:spotless/providers/fetched_tracks_provider.dart';
-import 'package:spotless/providers/playlist_url_provider.dart';
+import 'package:spotless/providers/playlist_id_provider.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 class TrackListPage extends ConsumerStatefulWidget {
@@ -23,14 +23,14 @@ class _TrackListPageState extends ConsumerState<TrackListPage> {
   @override
   Widget build(BuildContext context) {
     var accessToken = ref.watch(accessTokenProvider);
-    var url = ref.watch(playlistUrlProvider);
+    var playlistId = ref.watch(playlistIdProvider);
 
     return Scaffold(
       appBar: AppBar(),
       body: FutureBuilder<List<TrackModel>?>(
         future: ref
             .read(fetchedTracksProvider.notifier)
-            .fetchFromUrl(url!, accessToken),
+            .fetchFromPlaylistId(playlistId, accessToken),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -42,6 +42,7 @@ class _TrackListPageState extends ConsumerState<TrackListPage> {
                 return Center(child: Text("No tracks found!"));
               } else {
                 return ListView.builder(
+                    itemCount: snapshot.data!.length,
                     shrinkWrap: true,
                     itemBuilder: (context, index) {
                       String authors = "";

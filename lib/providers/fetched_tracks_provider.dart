@@ -15,9 +15,12 @@ class FetchedTracksNotifier extends StateNotifier<List<TrackModel>?>
 
   List<TrackModel>? _tracks;
 
-  Future<List<TrackModel>?> fetchFromUrl(Uri url, String accessToken) async {
-    http.Response response =
-        await http.get(url, headers: {"Authorization": "Bearer $accessToken"});
+  Future<List<TrackModel>?> fetchFromPlaylistId(
+      String playlistId, String accessToken) async {
+    _tracks = null;
+    http.Response response = await http.get(
+        Uri.parse("https://api.spotify.com/v1/playlists/$playlistId/tracks"),
+        headers: {"Authorization": "Bearer $accessToken"});
     if (response.statusCode == 200) {
       List<dynamic> fetchedItems = json.decode(response.body)["items"];
       for (var item in fetchedItems) {
