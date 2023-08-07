@@ -36,6 +36,7 @@ class TrackCardWidget extends ConsumerWidget {
           children: [
             Text(_getInterpretsString()),
             Text(snapshot.data![trackIndex].title),
+            Text(trackIndex.toString()),
           ],
         ),
         IconButton(

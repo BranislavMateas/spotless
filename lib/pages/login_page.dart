@@ -47,8 +47,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 await ref
                     .read(fetchedTracksProvider.notifier)
                     .fetchFromPlaylistId(
-                      playlistId,
-                      accessToken,
+                      playlistId: playlistId,
+                      accessToken: accessToken,
                     );
 
                 if (mounted) {

@@ -52,9 +52,10 @@ class _TrackListPageState extends ConsumerState<TrackListPage> {
       ),
       body: SafeArea(
         child: FutureBuilder<List<TrackModel>?>(
-          future: ref
-              .read(fetchedTracksProvider.notifier)
-              .fetchFromPlaylistId(playlistId, accessToken),
+          future: ref.read(fetchedTracksProvider.notifier).fetchFromPlaylistId(
+                playlistId: playlistId,
+                accessToken: accessToken,
+              ),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Center(child: CircularProgressIndicator());

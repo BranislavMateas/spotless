@@ -19,17 +19,33 @@ class FetchedTracksNotifier extends StateNotifier<List<TrackModel>?>
 
   List<TrackModel>? _tracks;
 
+  int _limit = 50;
+
   Future<List<TrackModel>?> fetchFromPlaylistId(
-      String playlistId, String accessToken) async {
-    _tracks = null;
+      {required String playlistId,
+      required String accessToken,
+      int offset = 0}) async {
+    if (offset == 0) {
+      _tracks = null;
+    }
     http.Response response = await http.get(
-        Uri.parse("https://api.spotify.com/v1/playlists/$playlistId/tracks"),
+        Uri.parse(
+            "https://api.spotify.com/v1/playlists/$playlistId/tracks?limit=$_limit&offset=$offset"),
         headers: {"Authorization": "Bearer $accessToken"});
     if (response.statusCode == 200) {
+      int tracksTotal = json.decode(response.body)["total"];
+
       List<dynamic> fetchedItems = json.decode(response.body)["items"];
       for (var item in fetchedItems) {
         _tracks ??= [];
         _tracks?.add(TrackModel.fromJson(item["track"]));
+      }
+      if (offset + _limit <= tracksTotal) {
+        await fetchFromPlaylistId(
+          accessToken: accessToken,
+          playlistId: playlistId,
+          offset: offset + _limit,
+        );
       }
     } else {
       loggy.error("Failed to fetch the tracks!");
