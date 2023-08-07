@@ -1,17 +1,17 @@
 class TrackModel {
   final String title;
-  final List<dynamic> authors;
+  final List<dynamic> interprets;
 
   TrackModel({
     required this.title,
-    required this.authors,
+    required this.interprets,
   });
 
-  factory TrackModel.fromJson(Map<String, dynamic> jsonTrack) {
+  factory TrackModel.fromJson(Map<String, dynamic> json) {
     return TrackModel(
-      title: jsonTrack["name"] as String,
-      authors:
-          jsonTrack["artists"].map((e) => e["name"]).toList() as List<dynamic>,
+      title: json["name"] as String,
+      interprets:
+          json["artists"].map((e) => e["name"]).toList() as List<dynamic>,
     );
   }
 }
