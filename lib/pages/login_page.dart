@@ -23,47 +23,42 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(),
-      body: Column(
-        children: [
-          Text("Enter the Url of your playlist"),
-          TextField(controller: playlistUrlController),
-          ElevatedButton(
-            onPressed: () async {
-              String accessToken = await SpotifySdk.getAccessToken(
-                clientId: dotenv.env['CLIENT_ID']!,
-                redirectUrl: dotenv.env['REDIRECT_URI']!,
-                scope: "playlist-read-private",
-              );
-              /*
-              await SpotifySdk.connectToSpotifyRemote(
-                clientId: dotenv.env['CLIENT_ID']!,
-                redirectUrl: dotenv.env['REDIRECT_URI']!,
-                accessToken: accessToken,
-                scope: "playlist-read-private",
-              );
-               */
+      body: SafeArea(
+        child: Column(
+          children: [
+            Text("Enter the Url of your playlist"),
+            TextField(controller: playlistUrlController),
+            ElevatedButton(
+              onPressed: () async {
+                String accessToken = await SpotifySdk.getAccessToken(
+                  clientId: dotenv.env['CLIENT_ID']!,
+                  redirectUrl: dotenv.env['REDIRECT_URI']!,
+                  scope: "playlist-read-private",
+                );
 
-              // TODO check for input text
-              var playlistId =
-                  Uri.parse(playlistUrlController.value.text).pathSegments.last;
+                // TODO check for input text
+                var playlistId = Uri.parse(playlistUrlController.value.text)
+                    .pathSegments
+                    .last;
 
-              ref.read(accessTokenProvider.notifier).state = accessToken;
-              ref.read(playlistIdProvider.notifier).state = playlistId;
+                ref.read(accessTokenProvider.notifier).state = accessToken;
+                ref.read(playlistIdProvider.notifier).state = playlistId;
 
-              await ref
-                  .read(fetchedTracksProvider.notifier)
-                  .fetchFromPlaylistId(
-                    playlistId,
-                    accessToken,
-                  );
+                await ref
+                    .read(fetchedTracksProvider.notifier)
+                    .fetchFromPlaylistId(
+                      playlistId,
+                      accessToken,
+                    );
 
-              if (mounted) {
-                Navigator.pushNamed(context, TrackListPage.pageRoute);
-              }
-            },
-            child: const Text("Submit"),
-          )
-        ],
+                if (mounted) {
+                  Navigator.pushNamed(context, TrackListPage.pageRoute);
+                }
+              },
+              child: const Text("Submit"),
+            )
+          ],
+        ),
       ),
     );
   }
