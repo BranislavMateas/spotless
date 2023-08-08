@@ -13,28 +13,17 @@ class TrackCardWidget extends ConsumerWidget {
     required this.trackIndex,
   });
 
-  String _getInterpretsString() {
-    String authors = "";
-    for (var item in snapshot.data![trackIndex].interprets) {
-      if (authors != "") {
-        authors += " & ";
-      }
-      authors += item;
-    }
-    return authors;
-  }
-
-  String _generateSongFileName() {
-    return "${_getInterpretsString()} - ${snapshot.data![trackIndex].title}.mp3";
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Row(
       children: [
         Column(
           children: [
-            Text(_getInterpretsString()),
+            Text(
+              ref
+                  .read(fetchedTracksProvider.notifier)
+                  .getInterpretsString(trackIndex),
+            ),
             Text(snapshot.data![trackIndex].title),
             Text(trackIndex.toString()),
           ],
@@ -43,7 +32,7 @@ class TrackCardWidget extends ConsumerWidget {
           onPressed: () async {
             await ref
                 .read(fetchedTracksProvider.notifier)
-                .downloadTrack(trackIndex, _generateSongFileName());
+                .downloadTrack(trackIndex);
           },
           icon: const Icon(Icons.download),
         ),

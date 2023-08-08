@@ -17,8 +17,6 @@ class TrackListPage extends ConsumerStatefulWidget {
 }
 
 class _TrackListPageState extends ConsumerState<TrackListPage> {
-  int trackCount = 0;
-
   @override
   Widget build(BuildContext context) {
     var accessToken = ref.watch(accessTokenProvider);
@@ -26,7 +24,9 @@ class _TrackListPageState extends ConsumerState<TrackListPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("$trackCount tracks found"),
+        title: Text(
+          "${ref.watch(fetchedTracksProvider.notifier).getTrackCount()} tracks found",
+        ),
         automaticallyImplyLeading: true,
         leading: IconButton(
           onPressed: () {
@@ -37,13 +37,20 @@ class _TrackListPageState extends ConsumerState<TrackListPage> {
         ),
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: () async {
+              int tracksTotal =
+                  ref.read(fetchedTracksProvider.notifier).getTrackCount();
+
+              for (int i = 0; i < tracksTotal; i++) {
+                await ref.read(fetchedTracksProvider.notifier).downloadTrack(i);
+              }
+            },
             icon: const Icon(Icons.download),
             tooltip: "Download all",
           ),
           IconButton(
-            onPressed: () {
-              openFileManager();
+            onPressed: () async {
+              await openFileManager();
             },
             icon: const Icon(Icons.folder),
             tooltip: "Show in folder",

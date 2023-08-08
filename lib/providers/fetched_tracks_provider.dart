@@ -19,7 +19,11 @@ class FetchedTracksNotifier extends StateNotifier<List<TrackModel>?>
 
   List<TrackModel>? _tracks;
 
-  int _limit = 50;
+  final int _limit = 50;
+
+  int getTrackCount() {
+    return _tracks?.length ?? 0;
+  }
 
   Future<List<TrackModel>?> fetchFromPlaylistId(
       {required String playlistId,
@@ -55,43 +59,63 @@ class FetchedTracksNotifier extends StateNotifier<List<TrackModel>?>
     return _tracks;
   }
 
-  Future<void> downloadTrack(int index, String songName) async {
+  Future<void> downloadTrack(int index) async {
     var status = await Permission.storage.status;
     if (!status.isGranted) {
       await Permission.storage.request();
     }
 
-    loggy.info("Downloading track...");
+    String songName = generateSongFileName(index);
 
-    final YoutubeExplode yt = YoutubeExplode();
-
-    SearchList searchResults = await yt.search.searchContent(songName);
-
-    var targetSongId = searchResults.first.id;
-
-    StreamManifest videoManifest =
-        await yt.videos.streamsClient.getManifest(targetSongId);
-    var streamInfo = videoManifest.audioOnly.withHighestBitrate();
-
-    // Get the actual stream
-    var stream = yt.videos.streamsClient.get(streamInfo);
-
-    // Open a file for writing.
     String? downloadsDirectoryPath =
         (await DownloadsPath.downloadsDirectory())?.path;
+    if (await File("${downloadsDirectoryPath!}/$songName").exists()) {
+      loggy.info("Downloading track...");
 
-    var file = File("${downloadsDirectoryPath!}/$songName");
-    var fileStream = file.openWrite();
+      final YoutubeExplode yt = YoutubeExplode();
 
-    // Pipe all the content of the stream into the file.
-    await stream.pipe(fileStream);
+      SearchList searchResults = await yt.search.searchContent(songName);
 
-    // Close the file.
-    await fileStream.flush();
-    await fileStream.close();
+      var targetSongId = searchResults.first.id;
 
-    yt.close();
+      StreamManifest videoManifest =
+          await yt.videos.streamsClient.getManifest(targetSongId);
+      var streamInfo = videoManifest.audioOnly.withHighestBitrate();
 
-    loggy.info("Track downloaded successfully!");
+      // Get the actual stream
+      var stream = yt.videos.streamsClient.get(streamInfo);
+
+      // Open a file for writing.
+      var file = File("$downloadsDirectoryPath/$songName");
+      var fileStream = file.openWrite();
+
+      // Pipe all the content of the stream into the file.
+      await stream.pipe(fileStream);
+
+      // Close the file.
+      await fileStream.flush();
+      await fileStream.close();
+
+      yt.close();
+
+      loggy.info("Track downloaded successfully! - $songName");
+    } else {
+      loggy.info("Track already downloaded! - $songName");
+    }
+  }
+
+  String getInterpretsString(int trackIndex) {
+    String authors = "";
+    for (var item in _tracks![trackIndex].interprets) {
+      if (authors != "") {
+        authors += " & ";
+      }
+      authors += item;
+    }
+    return authors;
+  }
+
+  String generateSongFileName(int trackIndex) {
+    return "${getInterpretsString(trackIndex)} - ${_tracks![trackIndex].title}.mp3";
   }
 }
