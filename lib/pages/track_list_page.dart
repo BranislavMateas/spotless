@@ -1,6 +1,8 @@
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:external_app_launcher/external_app_launcher.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:open_file_manager/open_file_manager.dart';
 import 'package:spotless/models/track_model.dart';
 import 'package:spotless/providers/access_token_provider.dart';
 import 'package:spotless/providers/fetched_tracks_provider.dart';
@@ -17,6 +19,8 @@ class TrackListPage extends ConsumerStatefulWidget {
 }
 
 class _TrackListPageState extends ConsumerState<TrackListPage> {
+  final String musicAppPackageName = "com.miui.player";
+
   @override
   Widget build(BuildContext context) {
     var accessToken = ref.watch(accessTokenProvider);
@@ -27,8 +31,10 @@ class _TrackListPageState extends ConsumerState<TrackListPage> {
         title: Text(
           "${ref.watch(fetchedTracksProvider.notifier).getTrackCount()} tracks found",
         ),
+        centerTitle: false,
         automaticallyImplyLeading: true,
         leading: IconButton(
+          padding: const EdgeInsets.symmetric(horizontal: 0),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -50,10 +56,25 @@ class _TrackListPageState extends ConsumerState<TrackListPage> {
           ),
           IconButton(
             onPressed: () async {
-              await openFileManager();
+              bool isAppInstalled = await LaunchApp.isAppInstalled(
+                androidPackageName: musicAppPackageName,
+              );
+              if (isAppInstalled) {
+                LaunchApp.openApp(
+                  androidPackageName: musicAppPackageName,
+                );
+              } else {
+                if (defaultTargetPlatform == TargetPlatform.android) {
+                  AndroidIntent intent = const AndroidIntent(
+                    action: "android.intent.action.MAIN",
+                    category: "android.intent.category.APP_MUSIC",
+                  );
+                  await intent.launch();
+                }
+              }
             },
-            icon: const Icon(Icons.folder),
-            tooltip: "Show in folder",
+            icon: const Icon(Icons.library_music),
+            tooltip: "Open music app",
           )
         ],
       ),

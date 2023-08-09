@@ -15,28 +15,34 @@ class TrackCardWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Row(
-      children: [
-        Column(
+    return Container(
+      color: Theme.of(context).colorScheme.background,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              ref
-                  .read(fetchedTracksProvider.notifier)
-                  .getInterpretsString(trackIndex),
+            Column(
+              children: [
+                Text(
+                  ref
+                      .read(fetchedTracksProvider.notifier)
+                      .getInterpretsString(trackIndex),
+                ),
+                Text(snapshot.data![trackIndex].title),
+              ],
             ),
-            Text(snapshot.data![trackIndex].title),
-            Text(trackIndex.toString()),
+            IconButton(
+              onPressed: () async {
+                await ref
+                    .read(fetchedTracksProvider.notifier)
+                    .downloadTrack(trackIndex);
+              },
+              icon: const Icon(Icons.download),
+            ),
           ],
         ),
-        IconButton(
-          onPressed: () async {
-            await ref
-                .read(fetchedTracksProvider.notifier)
-                .downloadTrack(trackIndex);
-          },
-          icon: const Icon(Icons.download),
-        ),
-      ],
+      ),
     );
   }
 }

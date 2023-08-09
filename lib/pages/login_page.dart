@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotify_sdk/spotify_sdk.dart';
 import 'package:spotless/pages/track_list_page.dart';
 import 'package:spotless/providers/access_token_provider.dart';
-import 'package:spotless/providers/fetched_tracks_provider.dart';
 import 'package:spotless/providers/playlist_id_provider.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -26,7 +25,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       body: SafeArea(
         child: Column(
           children: [
-            Text("Enter the Url of your playlist"),
+            const Text("Enter the Url of your playlist"),
             TextField(controller: playlistUrlController),
             ElevatedButton(
               onPressed: () async {
@@ -43,13 +42,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                 ref.read(accessTokenProvider.notifier).state = accessToken;
                 ref.read(playlistIdProvider.notifier).state = playlistId;
-
-                await ref
-                    .read(fetchedTracksProvider.notifier)
-                    .fetchFromPlaylistId(
-                      playlistId: playlistId,
-                      accessToken: accessToken,
-                    );
 
                 if (mounted) {
                   Navigator.pushNamed(context, TrackListPage.pageRoute);
