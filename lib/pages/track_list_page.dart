@@ -7,6 +7,7 @@ import 'package:spotless/models/track_model.dart';
 import 'package:spotless/providers/access_token_provider.dart';
 import 'package:spotless/providers/fetched_tracks_provider.dart';
 import 'package:spotless/providers/playlist_id_provider.dart';
+import 'package:spotless/providers/track_count_provider.dart';
 import 'package:spotless/widgets/track_card_widget.dart';
 
 class TrackListPage extends ConsumerStatefulWidget {
@@ -25,11 +26,12 @@ class _TrackListPageState extends ConsumerState<TrackListPage> {
   Widget build(BuildContext context) {
     var accessToken = ref.watch(accessTokenProvider);
     var playlistId = ref.watch(playlistIdProvider);
+    var trackCount = ref.watch(trackCountProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "${ref.watch(fetchedTracksProvider.notifier).getTrackCount()} tracks found",
+          "$trackCount tracks found",
         ),
         centerTitle: false,
         automaticallyImplyLeading: true,
@@ -44,11 +46,8 @@ class _TrackListPageState extends ConsumerState<TrackListPage> {
         actions: [
           IconButton(
             onPressed: () async {
-              int tracksTotal =
-                  ref.read(fetchedTracksProvider.notifier).getTrackCount();
-
-              for (int i = 0; i < tracksTotal; i++) {
-                await ref.read(fetchedTracksProvider.notifier).downloadTrack(i);
+              for (int i = 0; i < trackCount; i++) {
+                ref.read(fetchedTracksProvider.notifier).downloadTrack(i);
               }
             },
             icon: const Icon(Icons.download),

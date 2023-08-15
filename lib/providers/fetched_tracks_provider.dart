@@ -1,29 +1,30 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:ffmpeg_kit_flutter_full_gpl/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_full_gpl/return_code.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
 import 'package:loggy/loggy.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:spotless/models/track_model.dart';
 import 'package:http/http.dart' as http;
+import 'package:spotless/providers/track_count_provider.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 final fetchedTracksProvider =
     StateNotifierProvider<FetchedTracksNotifier, List<TrackModel>?>(
-        (ref) => FetchedTracksNotifier());
+        (ref) => FetchedTracksNotifier(ref));
 
 class FetchedTracksNotifier extends StateNotifier<List<TrackModel>?>
     with UiLoggy {
-  FetchedTracksNotifier() : super(null);
+  final Ref ref;
+
+  FetchedTracksNotifier(this.ref) : super(null);
 
   List<TrackModel>? _tracks;
 
+  int? trackCount;
   final int _limit = 50;
-
-  int getTrackCount() {
-    return _tracks?.length ?? 0;
-  }
 
   Future<List<TrackModel>?> fetchFromPlaylistId(
       {required String playlistId,
@@ -37,14 +38,17 @@ class FetchedTracksNotifier extends StateNotifier<List<TrackModel>?>
             "https://api.spotify.com/v1/playlists/$playlistId/tracks?limit=$_limit&offset=$offset"),
         headers: {"Authorization": "Bearer $accessToken"});
     if (response.statusCode == 200) {
-      int tracksTotal = json.decode(response.body)["total"];
+      if (trackCount == null) {
+        trackCount = json.decode(response.body)["total"];
+        ref.read(trackCountProvider.notifier).state = trackCount!;
+      }
 
       List<dynamic> fetchedItems = json.decode(response.body)["items"];
       for (var item in fetchedItems) {
         _tracks ??= [];
         _tracks?.add(TrackModel.fromJson(item["track"]));
       }
-      if (offset + _limit <= tracksTotal) {
+      if (offset + _limit <= trackCount!) {
         await fetchFromPlaylistId(
           accessToken: accessToken,
           playlistId: playlistId,
@@ -59,18 +63,24 @@ class FetchedTracksNotifier extends StateNotifier<List<TrackModel>?>
     return _tracks;
   }
 
-  Future<void> downloadTrack(int index) async {
+  void downloadTrack(int index) async {
     var status = await Permission.storage.status;
     if (!status.isGranted) {
       await Permission.storage.request();
     }
 
+    Directory targetDirectory = Directory("/storage/emulated/0/Music/Spotless");
+    if (!targetDirectory.existsSync()) {
+      targetDirectory.createSync(recursive: true);
+    }
+
     String songName = generateSongFileName(index);
 
-    String? downloadsDirectoryPath =
-        (await DownloadsPath.downloadsDirectory())?.path;
-    if (await File("${downloadsDirectoryPath!}/$songName").exists()) {
-      loggy.info("Downloading track...");
+    var sourceFile = File("${targetDirectory.path}/$songName.mp4");
+    var targetFile = File("${targetDirectory.path}/$songName.mp3");
+
+    if (!targetFile.existsSync()) {
+      loggy.info("Downloading track... ${targetFile.path}");
 
       final YoutubeExplode yt = YoutubeExplode();
 
@@ -86,8 +96,7 @@ class FetchedTracksNotifier extends StateNotifier<List<TrackModel>?>
       var stream = yt.videos.streamsClient.get(streamInfo);
 
       // Open a file for writing.
-      var file = File("$downloadsDirectoryPath/$songName");
-      var fileStream = file.openWrite();
+      var fileStream = sourceFile.openWrite();
 
       // Pipe all the content of the stream into the file.
       await stream.pipe(fileStream);
@@ -98,9 +107,27 @@ class FetchedTracksNotifier extends StateNotifier<List<TrackModel>?>
 
       yt.close();
 
-      loggy.info("Track downloaded successfully! - $songName");
+      FFmpegKit.execute('-i "${sourceFile.path}" "${targetFile.path}"')
+          .then((session) async {
+        final returnCode = await session.getReturnCode();
+
+        if (ReturnCode.isSuccess(returnCode)) {
+          loggy.info("success");
+        } else if (ReturnCode.isCancel(returnCode)) {
+          loggy.info("cancel");
+        } else {
+          loggy.error(returnCode?.getValue().toString());
+          loggy.error(await session.getAllLogsAsString());
+          loggy.error(await session.getFailStackTrace());
+          loggy.error(await session.getOutput());
+        }
+
+        await sourceFile.delete();
+
+        loggy.info("Track downloaded successfully! - ${targetFile.path}");
+      });
     } else {
-      loggy.info("Track already downloaded! - $songName");
+      loggy.info("Track already downloaded! - ${targetFile.path}");
     }
   }
 
@@ -116,6 +143,6 @@ class FetchedTracksNotifier extends StateNotifier<List<TrackModel>?>
   }
 
   String generateSongFileName(int trackIndex) {
-    return "${getInterpretsString(trackIndex)} - ${_tracks![trackIndex].title}.mp3";
+    return "${getInterpretsString(trackIndex)} - ${_tracks![trackIndex].title}";
   }
 }

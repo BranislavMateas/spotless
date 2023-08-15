@@ -33,8 +33,8 @@ class TrackCardWidget extends ConsumerWidget {
               ],
             ),
             IconButton(
-              onPressed: () async {
-                await ref
+              onPressed: () {
+                ref
                     .read(fetchedTracksProvider.notifier)
                     .downloadTrack(trackIndex);
               },

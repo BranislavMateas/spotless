@@ -1,10 +1,12 @@
 class TrackModel {
   final String title;
   final List<dynamic> interprets;
+  final String albumName;
 
   TrackModel({
     required this.title,
     required this.interprets,
+    required this.albumName,
   });
 
   factory TrackModel.fromJson(Map<String, dynamic> json) {
@@ -12,6 +14,7 @@ class TrackModel {
       title: json["name"] as String,
       interprets:
           json["artists"].map((e) => e["name"]).toList() as List<dynamic>,
+      albumName: json["album"]["name"] as String,
     );
   }
 }
