@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <!-- Provide required visibility configuration for API level 30 and above -->
     <queries>
-        <package android:name="com.miui.player"/>
+        <package android:name="in.krosbits.musicolet"/>
         <!-- If your app checks for HTTPS support -->
         <intent>
             <action android:name="android.intent.action.VIEW"/>

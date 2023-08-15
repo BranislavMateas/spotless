@@ -20,7 +20,7 @@ class TrackListPage extends ConsumerStatefulWidget {
 }
 
 class _TrackListPageState extends ConsumerState<TrackListPage> {
-  final String musicAppPackageName = "com.miui.player";
+  final String musicAppPackageName = "in.krosbits.musicolet";
 
   @override
   Widget build(BuildContext context) {
