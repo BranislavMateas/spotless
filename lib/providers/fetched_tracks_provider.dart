@@ -108,7 +108,7 @@ class FetchedTracksNotifier extends StateNotifier<List<TrackModel>?>
       yt.close();
 
       FFmpegKit.execute(
-              '-i "${sourceFile.path}" -metadata artist="${getInterpretsString(index)}" -metadata album="${_tracks![index].albumName}" -metadata title="${_tracks![index].title}" "${targetFile.path}"')
+              '-i "${sourceFile.path}" -id3v2_version 3 -metadata artist="${getInterpretsString(index)}" -metadata album="${_tracks![index].albumName}" -metadata title="${_tracks![index].title}" "${targetFile.path}"')
           .then((session) async {
         final returnCode = await session.getReturnCode();
 
