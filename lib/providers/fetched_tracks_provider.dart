@@ -85,7 +85,7 @@ class FetchedTracksNotifier extends StateNotifier<List<TrackModel>?>
       final YoutubeExplode yt = YoutubeExplode();
 
       SearchList searchResults =
-          await yt.search.searchContent("$songName (Official Audio)");
+          await yt.search.searchContent("$songName (audio)");
 
       var targetSongId = searchResults.first.id;
 
