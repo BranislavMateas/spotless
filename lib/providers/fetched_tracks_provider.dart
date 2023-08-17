@@ -82,10 +82,14 @@ class FetchedTracksNotifier extends StateNotifier<List<TrackModel>?>
     if (!targetFile.existsSync()) {
       loggy.info("Downloading track... ${targetFile.path}");
 
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Downloading track... ${targetFile.path}"),
+      ));
+
       final YoutubeExplode yt = YoutubeExplode();
 
       SearchList searchResults =
-          await yt.search.searchContent("$songName (audio)");
+          await yt.search.searchContent("$songName (lyrics)");
 
       var targetSongId = searchResults.first.id;
 
@@ -108,28 +112,49 @@ class FetchedTracksNotifier extends StateNotifier<List<TrackModel>?>
 
       yt.close();
 
-      FFmpegKit.execute(
-              '-i "${sourceFile.path}" -id3v2_version 3 -metadata artist="${getInterpretsString(index)}" -metadata album="${_tracks![index].albumName}" -metadata title="${_tracks![index].title}" "${targetFile.path}"')
-          .then((session) async {
-        final returnCode = await session.getReturnCode();
+      var response = await http.get(Uri.parse(_tracks![index].albumCoverUrl));
 
-        if (ReturnCode.isSuccess(returnCode)) {
-          loggy.info("success");
-        } else if (ReturnCode.isCancel(returnCode)) {
-          loggy.info("cancel");
-        } else {
-          loggy.error(returnCode?.getValue().toString());
-          loggy.error(await session.getAllLogsAsString());
-          loggy.error(await session.getFailStackTrace());
-          loggy.error(await session.getOutput());
-        }
+      if (response.statusCode == 200) {
+        var albumCover = File("${targetDirectory.path}/$songName.jpg");
+        albumCover.writeAsBytesSync(response.bodyBytes);
 
-        await sourceFile.delete();
+        FFmpegKit.execute(
+                '-vn -sn -dn -i "${sourceFile.path}" -i "${albumCover.path}" -map 0:a -map 1:0 -c:1 copy -id3v2_version 3 -c:a libmp3lame -qscale:a 4 -metadata:s:v comment="Cover (front)" -metadata artist="${getInterpretsString(index)}" -metadata album="${_tracks![index].albumName}" -metadata title="${_tracks![index].title}" "${targetFile.path}"')
+            .then((session) async {
+          final returnCode = await session.getReturnCode();
 
-        loggy.info("Track downloaded successfully! - ${targetFile.path}");
-      });
+          if (ReturnCode.isSuccess(returnCode)) {
+            loggy.info("success");
+          } else if (ReturnCode.isCancel(returnCode)) {
+            loggy.info("cancel");
+          } else {
+            loggy.error(returnCode?.getValue().toString());
+            loggy.error(await session.getAllLogsAsString());
+            loggy.error(await session.getFailStackTrace());
+            loggy.error(await session.getOutput());
+          }
+
+          await sourceFile.delete();
+          await albumCover.delete();
+
+          loggy.info("Track downloaded successfully! - ${targetFile.path}");
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content:
+                Text("Track downloaded successfully! - ${targetFile.path}"),
+          ));
+        });
+      } else {
+        loggy.error(response.statusCode);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+              "There was an error fetching cover image! - ${response.statusCode}"),
+        ));
+      }
     } else {
       loggy.info("Track already downloaded! - ${targetFile.path}");
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Track already downloaded! - ${targetFile.path}"),
+      ));
     }
   }
 
